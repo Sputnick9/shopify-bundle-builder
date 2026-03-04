@@ -1,0 +1,321 @@
+{{ 'bundle-builder.css' | asset_url | stylesheet_tag }}
+
+<div class="bundle-builder" data-bundle-builder data-section-id="{{ section.id }}">
+  {% comment %} Hero Section {% endcomment %}
+  <div class="bundle-builder__hero">
+    <div class="bundle-builder__hero-inner">
+      <div class="bundle-builder__hero-content">
+        {% if section.settings.show_reviews %}
+          <div class="bundle-builder__reviews">
+            <span class="bundle-builder__stars">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            </span>
+            <span class="bundle-builder__reviews-count">{{ section.settings.review_count }} reviews</span>
+          </div>
+        {% endif %}
+        <h1 class="bundle-builder__heading">{{ section.settings.heading_line1 }} <br><span>{{ section.settings.heading_line2 }}</span></h1>
+        <p class="bundle-builder__description">{{ section.settings.description }}</p>
+      </div>
+      {% if section.settings.show_max_badge %}
+        <div class="bundle-builder__hero-badge">
+          <div>
+            <div class="bundle-builder__hero-badge-pct">{{ section.settings.tier_5_percent }}%</div>
+            <div class="bundle-builder__hero-badge-label">max savings</div>
+          </div>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+  {% comment %} Main Content {% endcomment %}
+  <div class="bundle-builder__main">
+    {% comment %} Category Tabs {% endcomment %}
+    <nav class="bundle-builder__tabs"></nav>
+
+    {% comment %} Product Categories {% endcomment %}
+    <div class="bundle-builder__categories"></div>
+
+    {% comment %} Spacer for fixed bottom bar {% endcomment %}
+    <div class="bundle-builder__spacer"></div>
+  </div>
+
+  {% comment %} Sticky Cart Bar {% endcomment %}
+  <div class="bundle-builder__cart-bar"></div>
+</div>
+
+{% comment %} Product Data JSON {% endcomment %}
+<script type="application/json" id="BundleBuilderData-{{ section.id }}">
+  {
+    "discountTiers": [
+      {% if section.settings.tier_1_min > 0 %}{ "minItems": {{ section.settings.tier_1_min }}, "discountPercent": {{ section.settings.tier_1_percent }} }{% endif %}
+      {% if section.settings.tier_2_min > 0 %},{ "minItems": {{ section.settings.tier_2_min }}, "discountPercent": {{ section.settings.tier_2_percent }} }{% endif %}
+      {% if section.settings.tier_3_min > 0 %},{ "minItems": {{ section.settings.tier_3_min }}, "discountPercent": {{ section.settings.tier_3_percent }} }{% endif %}
+      {% if section.settings.tier_4_min > 0 %},{ "minItems": {{ section.settings.tier_4_min }}, "discountPercent": {{ section.settings.tier_4_percent }} }{% endif %}
+      {% if section.settings.tier_5_min > 0 %},{ "minItems": {{ section.settings.tier_5_min }}, "discountPercent": {{ section.settings.tier_5_percent }} }{% endif %}
+    ],
+    "categories": [
+      {% for block in section.blocks %}
+        {% if block.type == 'category' %}
+          {% unless forloop.first %},{% endunless %}
+          {
+            "name": {{ block.settings.title | json }},
+            "icon": {{ block.settings.icon_svg | json }}
+          }
+        {% endif %}
+      {% endfor %}
+    ],
+    "products": [
+      {% assign first_product = true %}
+      {% for block in section.blocks %}
+        {% if block.type == 'category' %}
+          {% assign cat_collection = block.settings.collection %}
+          {% if cat_collection %}
+            {% for product in cat_collection.products %}
+              {% unless first_product %},{% endunless %}
+              {
+                "id": {{ product.id }},
+                "name": {{ product.title | json }},
+                "price": {{ product.price }},
+                "category": {{ block.settings.title | json }},
+                "image": {{ product.featured_image | image_url: width: 400 | json }},
+                "gradientFrom": {{ product.metafields.custom.gradient_from.value | default: '#F3F4F6' | json }},
+                "gradientTo": {{ product.metafields.custom.gradient_to.value | default: '#D1D5DB' | json }},
+                "variants": [
+                  {% for variant in product.variants %}
+                    {% unless forloop.first %},{% endunless %}
+                    {
+                      "id": {{ variant.id }},
+                      "name": {{ variant.title | json }},
+                      "available": {{ variant.available }},
+                      "image": {% if variant.featured_image %}{{ variant.featured_image | image_url: width: 300 | json }}{% else %}null{% endif %},
+                      "gradientFrom": {{ variant.metafields.custom.gradient_from.value | default: '#F3F4F6' | json }},
+                      "gradientTo": {{ variant.metafields.custom.gradient_to.value | default: '#D1D5DB' | json }},
+                      "isNew": {% if variant.metafields.custom.is_new %}true{% else %}false{% endif %}
+                    }
+                  {% endfor %}
+                ]
+              }
+              {% assign first_product = false %}
+            {% endfor %}
+          {% endif %}
+        {% endif %}
+      {% endfor %}
+    ]
+  }
+</script>
+
+<script src="{{ 'bundle-builder.js' | asset_url }}" defer="defer"></script>
+
+{% schema %}
+{
+  "name": "Bundle Builder",
+  "tag": "section",
+  "class": "section-bundle-builder",
+  "settings": [
+    {
+      "type": "header",
+      "content": "Hero"
+    },
+    {
+      "type": "text",
+      "id": "heading_line1",
+      "label": "Heading Line 1",
+      "default": "Build Your"
+    },
+    {
+      "type": "text",
+      "id": "heading_line2",
+      "label": "Heading Line 2 (colored)",
+      "default": "Bundle"
+    },
+    {
+      "type": "textarea",
+      "id": "description",
+      "label": "Description",
+      "default": "Save up to 30% — the more you add to your bundle, the more you save! This offer cannot be combined with any other offers."
+    },
+    {
+      "type": "checkbox",
+      "id": "show_reviews",
+      "label": "Show review stars",
+      "default": true
+    },
+    {
+      "type": "text",
+      "id": "review_count",
+      "label": "Review count",
+      "default": "964"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_max_badge",
+      "label": "Show max savings badge",
+      "default": true
+    },
+    {
+      "type": "header",
+      "content": "Discount Tier 1"
+    },
+    {
+      "type": "range",
+      "id": "tier_1_min",
+      "label": "Minimum items",
+      "min": 0,
+      "max": 20,
+      "step": 1,
+      "default": 2
+    },
+    {
+      "type": "range",
+      "id": "tier_1_percent",
+      "label": "Discount %",
+      "min": 0,
+      "max": 50,
+      "step": 1,
+      "default": 10
+    },
+    {
+      "type": "header",
+      "content": "Discount Tier 2"
+    },
+    {
+      "type": "range",
+      "id": "tier_2_min",
+      "label": "Minimum items",
+      "min": 0,
+      "max": 20,
+      "step": 1,
+      "default": 3
+    },
+    {
+      "type": "range",
+      "id": "tier_2_percent",
+      "label": "Discount %",
+      "min": 0,
+      "max": 50,
+      "step": 1,
+      "default": 15
+    },
+    {
+      "type": "header",
+      "content": "Discount Tier 3"
+    },
+    {
+      "type": "range",
+      "id": "tier_3_min",
+      "label": "Minimum items",
+      "min": 0,
+      "max": 20,
+      "step": 1,
+      "default": 4
+    },
+    {
+      "type": "range",
+      "id": "tier_3_percent",
+      "label": "Discount %",
+      "min": 0,
+      "max": 50,
+      "step": 1,
+      "default": 20
+    },
+    {
+      "type": "header",
+      "content": "Discount Tier 4"
+    },
+    {
+      "type": "range",
+      "id": "tier_4_min",
+      "label": "Minimum items",
+      "min": 0,
+      "max": 20,
+      "step": 1,
+      "default": 5
+    },
+    {
+      "type": "range",
+      "id": "tier_4_percent",
+      "label": "Discount %",
+      "min": 0,
+      "max": 50,
+      "step": 1,
+      "default": 25
+    },
+    {
+      "type": "header",
+      "content": "Discount Tier 5"
+    },
+    {
+      "type": "range",
+      "id": "tier_5_min",
+      "label": "Minimum items",
+      "min": 0,
+      "max": 20,
+      "step": 1,
+      "default": 6
+    },
+    {
+      "type": "range",
+      "id": "tier_5_percent",
+      "label": "Discount %",
+      "min": 0,
+      "max": 50,
+      "step": 1,
+      "default": 30
+    }
+  ],
+  "blocks": [
+    {
+      "type": "category",
+      "name": "Category",
+      "settings": [
+        {
+          "type": "text",
+          "id": "title",
+          "label": "Category Title",
+          "default": "Deodorant"
+        },
+        {
+          "type": "collection",
+          "id": "collection",
+          "label": "Collection"
+        },
+        {
+          "type": "html",
+          "id": "icon_svg",
+          "label": "Icon SVG (optional)",
+          "info": "Paste an SVG icon for this category tab. Leave empty for no icon."
+        }
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "name": "Bundle Builder",
+      "blocks": [
+        {
+          "type": "category",
+          "settings": {
+            "title": "Deodorant"
+          }
+        },
+        {
+          "type": "category",
+          "settings": {
+            "title": "Wash"
+          }
+        },
+        {
+          "type": "category",
+          "settings": {
+            "title": "Wipes"
+          }
+        }
+      ]
+    }
+  ]
+}
+{% endschema %}
